@@ -13,6 +13,8 @@
 
   var el = {
     langSwitch: document.getElementById('lang-switch'),
+    langDialog: document.getElementById('lang-dialog'),
+    langChoices: document.getElementById('lang-choices'),
     scale: document.getElementById('rating-scale'),
     form: document.getElementById('quiz-form'),
     progressFill: document.getElementById('progress-fill'),
@@ -80,6 +82,39 @@
       });
       el.langSwitch.appendChild(button);
     });
+  }
+
+  /* Shown once, before anything else, when the person has never picked a
+   * language. The switcher at the top of the welcome screen stays available
+   * for changing it later. */
+  function renderLangDialog() {
+    el.langChoices.textContent = '';
+
+    I18N.LANGS.forEach(function (entry) {
+      var button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'lang-choice';
+      button.textContent = entry.name;
+      button.lang = entry.html;
+      button.addEventListener('click', function () {
+        I18N.setLang(entry.code);
+        closeLangDialog();
+      });
+      el.langChoices.appendChild(button);
+    });
+  }
+
+  function openLangDialog() {
+    renderLangDialog();
+    el.langDialog.hidden = false;
+    requestAnimationFrame(function () {
+      el.langDialog.classList.add('is-open');
+    });
+  }
+
+  function closeLangDialog() {
+    el.langDialog.classList.remove('is-open');
+    el.langDialog.hidden = true;
   }
 
   /* ------------------------------------------------------------ home */
@@ -316,6 +351,8 @@
     updateProgress();
 
     I18N.onChange(retranslate);
+
+    if (!I18N.hasChosen) openLangDialog();
 
     el.form.addEventListener('change', function (event) {
       var input = event.target;

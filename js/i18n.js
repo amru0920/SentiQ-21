@@ -469,6 +469,9 @@
   var DEFAULT = 'ms';
   var listeners = [];
   var current = DEFAULT;
+  /* False until the person picks a language for themselves, which is what
+   * decides whether the first-run chooser opens. */
+  var chosen = false;
 
   function known(code) {
     return LANGS.some(function (entry) {
@@ -483,7 +486,10 @@
     } catch (error) {
       /* private mode - fall through to the browser's own preference */
     }
-    if (known(stored)) return stored;
+    if (known(stored)) {
+      chosen = true;
+      return stored;
+    }
 
     var tags = (global.navigator && navigator.languages) ||
       [(global.navigator && navigator.language) || ''];
@@ -539,13 +545,19 @@
   }
 
   function setLang(code) {
-    if (!known(code) || code === current) return;
-    current = code;
+    if (!known(code)) return;
+
+    /* Recorded even when the code matches what is already showing, so that
+     * confirming the pre-selected language still counts as a choice. */
+    chosen = true;
     try {
       localStorage.setItem(STORAGE_KEY, code);
     } catch (error) {
       /* the choice just will not survive a reload */
     }
+
+    if (code === current) return;
+    current = code;
     apply();
     listeners.forEach(function (fn) {
       fn(current);
@@ -566,6 +578,9 @@
     setLang: setLang,
     get lang() {
       return current;
+    },
+    get hasChosen() {
+      return chosen;
     },
     onChange: function (fn) {
       listeners.push(fn);

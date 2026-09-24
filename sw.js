@@ -1,6 +1,6 @@
 /* Offline support. Bump CACHE when any file below changes, otherwise phones
  * keep serving the old copy. */
-var CACHE = 'sentiq21-v3';
+var CACHE = 'sentiq21-v4';
 
 var SHELL = [
   './',

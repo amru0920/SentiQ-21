@@ -60,8 +60,11 @@ Dua keadaan yang dikendalikan:
 Aplikasi ini ada dalam **empat bahasa**: Bahasa Melayu, English, தமிழ் dan
 中文. Penukar bahasa ada di bahagian atas skrin Home.
 
-- Bahasa lalai ialah **Bahasa Melayu**. Kalau tetapan bahasa pelayar pengguna
-  ialah English, Tamil atau Mandarin, aplikasi akan terus guna bahasa itu.
+- **Kali pertama app dibuka**, satu popup muncul menyuruh pengguna pilih
+  bahasa. Ia hanya muncul sekali — selepas pengguna pilih, ia tidak muncul
+  lagi. Penukar bahasa di atas skrin Home kekal untuk tukar kemudian.
+- Bahasa yang ditanda dahulu dalam popup mengikut tetapan bahasa pelayar
+  pengguna; kalau tiada yang padan, **Bahasa Melayu** digunakan.
 - Pilihan pengguna disimpan dalam peranti, jadi ia kekal selepas tutup app.
 - Keputusan yang disimpan **tidak terikat** kepada bahasa. Skor disimpan
   sebagai jawapan mentah, jadi keputusan lama akan dipapar dalam bahasa yang

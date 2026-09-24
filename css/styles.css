@@ -426,6 +426,54 @@ body {
 .sheet.is-open .sheet__backdrop { opacity: 1; }
 .sheet.is-open .sheet__panel { transform: translateY(0); }
 
+/* Centred variant, used by the first-run language chooser. */
+.sheet--center { align-items: center; padding: 20px; }
+
+.sheet__panel--center {
+  max-height: none;
+  padding: 26px 22px 24px;
+  border-radius: 20px;
+  text-align: center;
+  transform: scale(.94);
+  opacity: 0;
+  transition: transform .2s ease, opacity .2s ease;
+}
+
+.sheet--center.is-open .sheet__panel--center {
+  transform: scale(1);
+  opacity: 1;
+}
+
+.sheet__panel--center img { display: block; margin: 0 auto 10px; }
+.sheet__panel--center h2 { margin: 0 0 8px; font-size: 21px; }
+
+.lang-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.lang-choice {
+  min-height: 52px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 17px;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s;
+}
+
+.lang-choice:hover,
+.lang-choice:focus-visible {
+  background: var(--lav-soft);
+  border-color: var(--purple-btn);
+  color: var(--purple);
+  outline: none;
+}
+
 .sheet__grip {
   display: block;
   width: 42px;
