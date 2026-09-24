@@ -25,11 +25,11 @@ Kemudian buka <http://127.0.0.1:8777/> dalam pelayar.
 Mana-mana hosting statik boleh. Syarat penting: **mesti HTTPS**, barulah
 "Install app" dan mod luar talian berfungsi.
 
-| Pilihan | Cara |
-| --- | --- |
-| Netlify Drop | Seret seluruh folder projek ke <https://app.netlify.com/drop> |
-| GitHub Pages | Push repo ini, Settings → Pages → pilih branch |
-| Vercel | `vercel deploy` dari dalam folder projek |
+Laman rasmi sekarang: **<https://sentiq-21.pages.dev/>** (Cloudflare Pages,
+disambung terus ke repo GitHub ini — setiap kali push ke `main`, Cloudflare
+akan terbitkan versi baharu secara automatik).
+
+Pilihan lain kalau perlu: Netlify Drop, GitHub Pages atau Vercel.
 
 Selepas naik, buka pautan di telefon → menu Chrome → **Add to Home screen**.
 Ikon SentiQ 21 akan muncul di skrin utama dan aplikasi terbuka tanpa bar
@@ -144,9 +144,8 @@ datang daripada tag `og:` dalam `<head>` fail `index.html`.
 
 **Penting:** URL dalam tag `og:url`, `og:image` dan `twitter:image` mesti
 **URL penuh**, bukan laluan relatif — kalau tidak, WhatsApp abaikan. Sekarang
-ia ditetapkan kepada `https://amru0920.github.io/SentiQ-21/`. Kalau app
-dipindah ke hosting lain (Netlify, Vercel, domain sendiri), tukar tiga URL
-itu dalam `index.html`.
+ia ditetapkan kepada `https://sentiq-21.pages.dev/`. Kalau app dipindah ke
+domain lain, tukar tiga URL itu (dan `rel="canonical"`) dalam `index.html`.
 
 WhatsApp simpan (*cache*) kad tu agak lama. Selepas tukar banner, guna
 <https://developers.facebook.com/tools/debug/> dan tekan *Scrape Again*
