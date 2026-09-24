@@ -356,6 +356,141 @@ body {
   text-align: center;
 }
 
+/* --------------------------------------------------------- advice */
+.advice-action {
+  margin: 0 0 16px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--lav-soft);
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+/* The tone lifts as the scores climb: calm for the low bands, warmer and
+   more insistent for severe and extremely severe. */
+.advice-action--moderate { background: #fdf6e7; }
+.advice-action--severe,
+.advice-action--extreme {
+  background: #fdf0f2;
+  color: #7d2230;
+  font-weight: 500;
+}
+
+.advice-title {
+  margin: 22px 0 12px;
+  font-size: 20px;
+}
+
+.advice {
+  margin-bottom: 12px;
+  padding: 14px 16px;
+  border-left: 4px solid var(--purple-btn);
+  border-radius: 0 12px 12px 0;
+  background: #fff;
+}
+
+.advice__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.advice__head h3 { margin: 0; font-size: 17px; }
+
+.advice__band {
+  flex: none;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+
+.advice__summary {
+  margin: 0 0 12px;
+  font-size: 14.5px;
+  line-height: 1.6;
+}
+
+.advice__steps-title {
+  margin: 0 0 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.advice__steps {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.advice__steps li {
+  margin-bottom: 7px;
+  font-size: 14.5px;
+  line-height: 1.6;
+}
+
+.advice-retest {
+  margin: 16px 0 0;
+  font-size: 13px;
+  color: var(--ink-soft);
+  text-align: center;
+}
+
+/* ---------------------------------------------------------- helplines */
+.help {
+  margin-bottom: 18px;
+  padding: 16px;
+  border: 1px solid #f0d2d8;
+  border-radius: 12px;
+  background: #fffafb;
+}
+
+.help h3 { margin: 0 0 6px; font-size: 17px; color: #7d2230; }
+
+.help__body {
+  margin: 0 0 12px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+
+.help__list { margin: 0; padding: 0; list-style: none; }
+
+.help__list li {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  padding: 9px 0;
+  border-top: 1px solid #f3e2e6;
+}
+
+.help__name { flex: 1 1 auto; font-size: 14.5px; }
+
+.help__number {
+  font-size: 17px;
+  font-weight: 700;
+  color: #b03050;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.help__note {
+  flex: 0 0 100%;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.help__emergency {
+  margin: 12px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #7d2230;
+}
+
 .disclaimer {
   margin: 22px 4px 0;
   font-size: 12.5px;
@@ -612,10 +747,18 @@ body {
   }
 
   .printout h1 { font-size: 30pt; margin: 0 0 18pt; }
-  .printout h2 { font-size: 18pt; margin: 26pt 0 12pt; }
+  .printout h2 { font-size: 18pt; margin: 24pt 0 10pt; }
+  .printout h3 { font-size: 13pt; margin: 14pt 0 6pt; }
   .printout p { font-size: 12pt; line-height: 1.5; margin: 0 0 12pt; }
+  .printout ul { margin: 0 0 12pt; padding-left: 18pt; }
+  .printout li { font-size: 12pt; line-height: 1.5; margin-bottom: 4pt; }
   .printout .scores p { margin: 0 0 4pt; }
+  .printout .action { font-weight: bold; }
   .printout .about p { color: #8c2f2f; }
+
+  /* Keep a subscale's heading with the advice that belongs to it. */
+  .printout h2, .printout h3 { break-after: avoid; page-break-after: avoid; }
+  .printout li { break-inside: avoid; page-break-inside: avoid; }
 
   @page { margin: 20mm; }
 }

@@ -9,11 +9,11 @@ const sandbox = { window: {}, console };
 sandbox.globalThis = sandbox;
 vm.createContext(sandbox);
 
-for (const file of ['js/i18n.js', 'js/data.js', 'js/scoring.js']) {
+for (const file of ['js/i18n.js', 'js/data.js', 'js/scoring.js', 'js/advice.js']) {
   vm.runInContext(fs.readFileSync(file, 'utf8'), sandbox, { filename: file });
 }
 
-const { DASS, Scoring, I18N } = sandbox.window;
+const { DASS, Scoring, I18N, Advice } = sandbox.window;
 const CODES = I18N.LANGS.map((entry) => entry.code);
 
 const byKey = (answers) =>
@@ -192,6 +192,106 @@ it('fills placeholders when asked', () => {
 it('falls back to English for an unknown key or language', () => {
   assert.equal(I18N.tIn('en', 'no.such.key'), 'no.such.key');
   assert.equal(I18N.tIn('xx', 'result.title'), 'Result');
+});
+
+/* --------------------------------------------------------------- advice */
+
+const BANDS = ['normal', 'mild', 'moderate', 'severe', 'extreme'];
+const SUBS = ['depression', 'anxiety', 'stress'];
+
+/* Answers that put one subscale at a chosen raw (pre-doubling) sum. */
+const answersFor = (key, sum) => {
+  const answers = new Array(21).fill(0);
+  const items = DASS.SUBSCALES.find((s) => s.key === key).items;
+  let left = sum;
+  for (const item of items) {
+    const v = Math.min(3, left);
+    answers[item - 1] = v;
+    left -= v;
+  }
+  assert.equal(left, 0, 'sum ' + sum + ' does not fit in seven items');
+  return answers;
+};
+
+it('has advice text for all 15 subscale and band combinations', () => {
+  for (const code of CODES) {
+    for (const sub of SUBS) {
+      for (const band of BANDS) {
+        const key = 'advice.' + sub + '.' + band;
+        assert.ok(I18N.DICT[code][key], code + ' is missing ' + key);
+      }
+      for (let n = 1; n <= 5; n++) {
+        const key = 'advice.' + sub + '.s' + n;
+        assert.ok(I18N.DICT[code][key], code + ' is missing ' + key);
+      }
+    }
+    for (const band of BANDS) {
+      assert.ok(I18N.DICT[code]['advice.action.' + band],
+        code + ' is missing advice.action.' + band);
+    }
+  }
+});
+
+it('builds three cards with five steps each, whatever the answers', () => {
+  for (const sum of [0, 5, 7, 10, 14, 21]) {
+    for (const sub of SUBS) {
+      const plan = Advice.build({ answers: answersFor(sub, sum) });
+      assert.equal(plan.cards.length, 3);
+      for (const card of plan.cards) {
+        assert.equal(card.steps.length, 5);
+        assert.ok(card.summary.length > 0);
+        // A missing key would fall through and render as the key itself.
+        assert.ok(!card.summary.startsWith('advice.'));
+        for (const step of card.steps) assert.ok(!step.startsWith('advice.'));
+      }
+    }
+  }
+});
+
+it('takes the overall action from the worst subscale, not an average', () => {
+  // Depression and anxiety at zero, stress at the top: still the top action.
+  const plan = Advice.build({ answers: answersFor('stress', 21) });
+  assert.equal(plan.bandKey, 'extreme');
+  assert.equal(plan.action, I18N.t('advice.action.extreme'));
+});
+
+it('orders the cards with the most severe subscale first', () => {
+  // Stress extreme, anxiety moderate (raw 6 -> 12), depression left normal.
+  const answers = answersFor('anxiety', 6);
+  for (const item of DASS.SUBSCALES.find((s) => s.key === 'stress').items) {
+    answers[item - 1] = 3;
+  }
+  const plan = Advice.build({ answers });
+  assert.equal(plan.cards.map((c) => c.key).join(','), 'stress,anxiety,depression');
+});
+
+it('breaks an ordering tie in the depression, anxiety, stress order', () => {
+  const plan = Advice.build({ answers: new Array(21).fill(0) });
+  assert.equal(plan.cards.map((c) => c.key).join(','), 'depression,anxiety,stress');
+});
+
+it('shows the helplines from the severe band upwards, not below', () => {
+  // Anxiety cutoffs, doubled: normal <=7, mild <=9, moderate <=14, severe <=19.
+  const at = (doubled) => Advice.build({ answers: answersFor('anxiety', doubled / 2) });
+  assert.equal(at(14).needsHelp, false, 'moderate should not trigger');
+  assert.equal(at(16).needsHelp, true, 'severe should trigger');
+  assert.equal(at(20).needsHelp, true, 'extremely severe should trigger');
+});
+
+it('shows the helplines when question 21 is answered at the top', () => {
+  const answers = new Array(21).fill(0);
+  answers[20] = 3; // "I felt that life was meaningless"
+  const plan = Advice.build({ answers });
+  assert.equal(plan.needsHelp, true);
+});
+
+it('gives every helpline a name, a display number and a dialable number', () => {
+  assert.ok(Advice.HELPLINES.length > 0);
+  for (const line of Advice.HELPLINES) {
+    assert.ok(line.name && line.name.trim().length > 0);
+    assert.ok(line.number && line.number.trim().length > 0);
+    assert.match(line.tel, /^[+0-9]+$/, line.name + ' has an undialable number');
+  }
 });
 
 console.log('\n' + passed + ' passed');

@@ -1,6 +1,6 @@
 /* Offline support. Bump CACHE when any file below changes, otherwise phones
  * keep serving the old copy. */
-var CACHE = 'sentiq21-v4';
+var CACHE = 'sentiq21-v5';
 
 var SHELL = [
   './',
@@ -13,6 +13,7 @@ var SHELL = [
   'js/scoring.js',
   'js/storage.js',
   'js/supabase.js',
+  'js/advice.js',
   'js/printout.js',
   'js/install.js',
   'js/app.js',

@@ -1,6 +1,7 @@
 /* Fills the hidden .printout block, which the print stylesheet reveals.
  * The layout mirrors the PDF the original app produced, in whichever
- * language the app is currently showing. */
+ * language the app is currently showing, and now carries the advice as well
+ * so the printed sheet is something a person can take to a counsellor. */
 (function (global) {
   'use strict';
 
@@ -28,6 +29,36 @@
         ' (' + t('severity.' + score.severityKey) + ')'));
     });
     root.appendChild(scores);
+
+    var plan = global.Advice.build(entry);
+
+    root.appendChild(text('p', plan.action, 'action'));
+
+    if (plan.needsHelp) {
+      root.appendChild(text('h2', t('help.title')));
+      root.appendChild(text('p', t('help.body')));
+      var lines = document.createElement('div');
+      lines.className = 'scores';
+      global.Advice.HELPLINES.forEach(function (line) {
+        lines.appendChild(text('p', line.name + ': ' + line.number +
+          (line.always ? ' (' + t('help.hours24') + ')' : '')));
+      });
+      root.appendChild(lines);
+      root.appendChild(text('p', t('help.emergency')));
+    }
+
+    root.appendChild(text('h2', t('advice.title')));
+    plan.cards.forEach(function (card) {
+      root.appendChild(text('h3',
+        t('subscale.' + card.key) + ' - ' + t('severity.' + card.severityKey)));
+      root.appendChild(text('p', card.summary));
+
+      var list = document.createElement('ul');
+      card.steps.forEach(function (step) {
+        list.appendChild(text('li', step));
+      });
+      root.appendChild(list);
+    });
 
     root.appendChild(text('h2', t('print.about')));
 

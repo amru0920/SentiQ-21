@@ -23,6 +23,7 @@
     scoreBars: document.getElementById('score-bars'),
     syncNote: document.getElementById('sync-note'),
     historyList: document.getElementById('history-list'),
+    advice: document.getElementById('advice'),
     toast: document.getElementById('toast'),
   };
 
@@ -264,6 +265,7 @@
       el.scoreBars.appendChild(bar);
     });
 
+    global.Advice.render(entry, el.advice);
     global.Printout.render(entry);
     setSyncNote(global.Sync.isConfigured() ? 'result.saving' : null);
   }
