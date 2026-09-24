@@ -1,0 +1,33 @@
+{
+  "name": "SentiQ 21",
+  "short_name": "SentiQ 21",
+  "description": "Saringan kendiri kesihatan mental berasaskan DASS-21.",
+  "id": "/sentiq21/",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#E3F3EF",
+  "theme_color": "#CFE9E3",
+  "lang": "en",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
