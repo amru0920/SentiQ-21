@@ -1,7 +1,10 @@
 /* Fills the hidden .printout block, which the print stylesheet reveals.
- * The layout mirrors the PDF the original app produced. */
+ * The layout mirrors the PDF the original app produced, in whichever
+ * language the app is currently showing. */
 (function (global) {
   'use strict';
+
+  var t = global.I18N.t;
 
   function text(tag, value, className) {
     var node = document.createElement(tag);
@@ -13,32 +16,25 @@
   function render(entry) {
     var root = document.getElementById('printout');
     root.textContent = '';
+    root.lang = document.documentElement.lang;
 
-    root.appendChild(text('h1', 'DASS-21 Results'));
+    root.appendChild(text('h1', t('print.title')));
 
     var scores = document.createElement('div');
     scores.className = 'scores';
-    entry.scores.forEach(function (score) {
-      scores.appendChild(
-        text('p', score.label + ': ' + score.score + ' (' + score.severity + ')')
-      );
+    global.Scoring.score(entry.answers).forEach(function (score) {
+      scores.appendChild(text('p',
+        t('subscale.' + score.key) + ': ' + score.score +
+        ' (' + t('severity.' + score.severityKey) + ')'));
     });
     root.appendChild(scores);
 
-    root.appendChild(text('h2', 'About DASS-21'));
+    root.appendChild(text('h2', t('print.about')));
 
     var about = document.createElement('div');
     about.className = 'about';
-    about.appendChild(text('p',
-      'The DASS-21 should not be used to replace a face-to-face clinical ' +
-      'interview. If you are experiencing significant emotional difficulties, ' +
-      'please consult your doctor or a qualified mental health professional.'
-    ));
-    about.appendChild(text('p',
-      'The DASS-21 is a set of three self-report scales designed to measure ' +
-      'the emotional states of depression, anxiety and stress. It does not ' +
-      'diagnose disorders but measures their severity based on symptoms.'
-    ));
+    about.appendChild(text('p', t('result.disclaimer')));
+    about.appendChild(text('p', t('print.p2')));
     root.appendChild(about);
   }
 

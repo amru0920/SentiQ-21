@@ -31,9 +31,15 @@
     );
   }
 
+  /* Severity is stored in English whatever language the app is showing, so
+   * rows stay comparable across devices. */
+  function level(score) {
+    return global.I18N.tIn('en', 'severity.' + score.severityKey);
+  }
+
   function rowFor(entry) {
     var byKey = {};
-    entry.scores.forEach(function (score) {
+    global.Scoring.score(entry.answers).forEach(function (score) {
       byKey[score.key] = score;
     });
 
@@ -43,11 +49,11 @@
       taken_at: entry.takenAt,
       answers: entry.answers,
       depression: byKey.depression.score,
-      depression_level: byKey.depression.severity,
+      depression_level: level(byKey.depression),
       anxiety: byKey.anxiety.score,
-      anxiety_level: byKey.anxiety.severity,
+      anxiety_level: level(byKey.anxiety),
       stress: byKey.stress.score,
-      stress_level: byKey.stress.severity,
+      stress_level: level(byKey.stress),
     };
   }
 

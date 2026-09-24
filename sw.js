@@ -1,6 +1,6 @@
 /* Offline support. Bump CACHE when any file below changes, otherwise phones
  * keep serving the old copy. */
-var CACHE = 'sentiq21-v1';
+var CACHE = 'sentiq21-v3';
 
 var SHELL = [
   './',
@@ -8,11 +8,13 @@ var SHELL = [
   'manifest.webmanifest',
   'config.js',
   'css/styles.css',
+  'js/i18n.js',
   'js/data.js',
   'js/scoring.js',
   'js/storage.js',
   'js/supabase.js',
   'js/printout.js',
+  'js/install.js',
   'js/app.js',
   'icons/logo.png',
   'icons/icon-192.png',

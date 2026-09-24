@@ -3,14 +3,18 @@
   'use strict';
 
   var DASS = global.DASS;
-  var answers = new Array(DASS.QUESTIONS.length).fill(null);
+  var I18N = global.I18N;
+  var t = I18N.t;
+
+  var answers = new Array(DASS.COUNT).fill(null);
   var currentEntry = null;
+  var lastSyncKey = null;
   var toastTimer = null;
 
   var el = {
+    langSwitch: document.getElementById('lang-switch'),
     scale: document.getElementById('rating-scale'),
     form: document.getElementById('quiz-form'),
-    quizScroll: document.getElementById('quiz-scroll'),
     progressFill: document.getElementById('progress-fill'),
     progressText: document.getElementById('progress-text'),
     scoreList: document.getElementById('score-list'),
@@ -40,6 +44,11 @@
     show(event.state || 'home', 'none');
   });
 
+  function currentView() {
+    var active = document.querySelector('.view.is-active');
+    return active ? active.id.replace('view-', '') : 'home';
+  }
+
   function hideToast() {
     el.toast.classList.remove('is-visible');
     clearTimeout(toastTimer);
@@ -51,23 +60,46 @@
     clearTimeout(toastTimer);
     toastTimer = setTimeout(function () {
       el.toast.classList.remove('is-visible');
-    }, 3200);
+    }, 3600);
+  }
+
+  /* --------------------------------------------------------- language */
+  function renderLangSwitch() {
+    el.langSwitch.textContent = '';
+
+    I18N.LANGS.forEach(function (entry) {
+      var button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'lang' + (entry.code === I18N.lang ? ' is-active' : '');
+      button.textContent = entry.label;
+      button.lang = entry.html;
+      button.setAttribute('aria-label', entry.name);
+      button.setAttribute('aria-pressed', entry.code === I18N.lang ? 'true' : 'false');
+      button.addEventListener('click', function () {
+        I18N.setLang(entry.code);
+      });
+      el.langSwitch.appendChild(button);
+    });
   }
 
   /* ------------------------------------------------------------ home */
   function renderScale() {
-    DASS.RATING_SCALE.forEach(function (line) {
+    el.scale.textContent = '';
+    for (var value = 0; value <= 3; value++) {
       var li = document.createElement('li');
-      li.textContent = line;
+      li.textContent = t('scale.' + value);
       el.scale.appendChild(li);
-    });
+    }
   }
 
   /* ------------------------------------------------------------ quiz */
+  /* Rebuilt from scratch on a language change, then the answers already
+   * given are ticked back on. */
   function renderQuestions() {
+    el.form.textContent = '';
     var fragment = document.createDocumentFragment();
 
-    DASS.QUESTIONS.forEach(function (statement, index) {
+    for (var index = 0; index < DASS.COUNT; index++) {
       /* A labelled radiogroup rather than fieldset/legend: a legend cuts a
        * gap through its fieldset's border, which erases the divider line
        * drawn between questions. */
@@ -80,20 +112,21 @@
       var label = document.createElement('p');
       label.className = 'q__text';
       label.id = 'q' + index + '-label';
-      label.textContent = index + 1 + '. ' + statement;
+      label.textContent = index + 1 + '. ' + t('q' + (index + 1));
       wrap.appendChild(label);
 
       var options = document.createElement('div');
       options.className = 'q__options';
 
       for (var value = 0; value <= 3; value++) {
-        var label = document.createElement('label');
-        label.className = 'opt';
+        var optLabel = document.createElement('label');
+        optLabel.className = 'opt';
 
         var input = document.createElement('input');
         input.type = 'radio';
         input.name = 'q' + index;
         input.value = String(value);
+        input.checked = answers[index] === value;
 
         var dot = document.createElement('span');
         dot.className = 'opt__dot';
@@ -101,26 +134,17 @@
         var caption = document.createElement('span');
         caption.textContent = String(value);
 
-        label.appendChild(input);
-        label.appendChild(dot);
-        label.appendChild(caption);
-        options.appendChild(label);
+        optLabel.appendChild(input);
+        optLabel.appendChild(dot);
+        optLabel.appendChild(caption);
+        options.appendChild(optLabel);
       }
 
       wrap.appendChild(options);
       fragment.appendChild(wrap);
-    });
+    }
 
     el.form.appendChild(fragment);
-
-    el.form.addEventListener('change', function (event) {
-      var input = event.target;
-      if (input.type !== 'radio') return;
-      var index = Number(input.name.slice(1));
-      answers[index] = Number(input.value);
-      document.getElementById('q' + index).classList.remove('is-missing');
-      updateProgress();
-    });
   }
 
   function updateProgress() {
@@ -128,15 +152,15 @@
       return value !== null;
     }).length;
     el.progressFill.style.width = (done / answers.length) * 100 + '%';
-    el.progressText.textContent = done + ' of ' + answers.length + ' answered';
+    el.progressText.textContent = t('quiz.progress', {
+      done: done,
+      total: answers.length,
+    });
   }
 
   function resetQuiz() {
-    answers = new Array(DASS.QUESTIONS.length).fill(null);
-    el.form.reset();
-    document.querySelectorAll('.q.is-missing').forEach(function (node) {
-      node.classList.remove('is-missing');
-    });
+    answers = new Array(DASS.COUNT).fill(null);
+    renderQuestions();
     updateProgress();
   }
 
@@ -146,7 +170,7 @@
       var node = document.getElementById('q' + missing);
       node.classList.add('is-missing');
       node.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      toast('Please answer question ' + (missing + 1) + ' to continue.');
+      toast(t('quiz.missing', { n: missing + 1 }));
       return;
     }
 
@@ -167,24 +191,28 @@
 
   /* ---------------------------------------------------------- result */
   function renderResult(entry) {
+    var scores = global.Scoring.score(entry.answers);
+
     el.scoreList.textContent = '';
-    entry.scores.forEach(function (score) {
+    scores.forEach(function (score) {
       var li = document.createElement('li');
-      li.textContent = score.label + ': ' + score.score + ' (' + score.severity + ')';
+      li.textContent = t('subscale.' + score.key) + ': ' + score.score +
+        ' (' + t('severity.' + score.severityKey) + ')';
       el.scoreList.appendChild(li);
     });
 
     el.scoreBars.textContent = '';
-    entry.scores.forEach(function (score) {
+    scores.forEach(function (score) {
       var bar = document.createElement('div');
       bar.className = 'bar';
 
       var head = document.createElement('div');
       head.className = 'bar__head';
       var name = document.createElement('span');
-      name.textContent = score.label;
+      name.textContent = t('subscale.' + score.key);
       var value = document.createElement('span');
-      value.textContent = score.severity + ' - ' + score.score + ' / ' + DASS.MAX_SCORE;
+      value.textContent = t('severity.' + score.severityKey) + ' - ' +
+        score.score + ' / ' + DASS.MAX_SCORE;
       head.appendChild(name);
       head.appendChild(value);
 
@@ -202,12 +230,15 @@
     });
 
     global.Printout.render(entry);
-    setSyncNote(global.Sync.isConfigured() ? 'Saving to your account...' : '');
+    setSyncNote(global.Sync.isConfigured() ? 'result.saving' : null);
   }
 
-  function setSyncNote(message) {
-    el.syncNote.textContent = message;
-    el.syncNote.hidden = !message;
+  /* Held as a key rather than a sentence, so the note follows a language
+   * change like everything else. */
+  function setSyncNote(key) {
+    lastSyncKey = key;
+    el.syncNote.textContent = key ? t(key) : '';
+    el.syncNote.hidden = !key;
   }
 
   function uploadCurrent() {
@@ -217,12 +248,10 @@
     global.Sync.push(entry)
       .then(function () {
         global.Storage.markSynced(entry.id);
-        if (currentEntry === entry) setSyncNote('Saved to your account.');
+        if (currentEntry === entry) setSyncNote('result.saved');
       })
       .catch(function () {
-        if (currentEntry === entry) {
-          setSyncNote('Saved on this device. It will sync when you are back online.');
-        }
+        if (currentEntry === entry) setSyncNote('result.savedLocal');
       });
   }
 
@@ -234,8 +263,7 @@
     if (!items.length) {
       var empty = document.createElement('p');
       empty.className = 'empty';
-      empty.textContent =
-        'No results saved yet. Finish a DASS-21 screening and it will appear here.';
+      empty.textContent = t('history.empty');
       el.historyList.appendChild(empty);
       return;
     }
@@ -249,13 +277,16 @@
       date.textContent = new Date(entry.takenAt).toLocaleString();
       card.appendChild(date);
 
-      entry.scores.forEach(function (score) {
+      /* Recomputed from the stored answers rather than read back from the
+       * stored labels, so older entries render in the current language. */
+      global.Scoring.score(entry.answers).forEach(function (score) {
         var row = document.createElement('div');
         row.className = 'hist__row';
         var label = document.createElement('span');
-        label.textContent = score.label;
+        label.textContent = t('subscale.' + score.key);
         var value = document.createElement('b');
-        value.textContent = score.score + ' (' + score.severity + ')';
+        value.textContent = score.score +
+          ' (' + t('severity.' + score.severityKey) + ')';
         row.appendChild(label);
         row.appendChild(value);
         card.appendChild(row);
@@ -266,10 +297,34 @@
   }
 
   /* ----------------------------------------------------------- wiring */
-  function init() {
+  function retranslate() {
+    I18N.apply();
+    renderLangSwitch();
     renderScale();
     renderQuestions();
     updateProgress();
+    if (currentEntry) renderResult(currentEntry);
+    if (lastSyncKey) setSyncNote(lastSyncKey);
+    if (currentView() === 'history') renderHistory();
+  }
+
+  function init() {
+    I18N.apply();
+    renderLangSwitch();
+    renderScale();
+    renderQuestions();
+    updateProgress();
+
+    I18N.onChange(retranslate);
+
+    el.form.addEventListener('change', function (event) {
+      var input = event.target;
+      if (input.type !== 'radio') return;
+      var index = Number(input.name.slice(1));
+      answers[index] = Number(input.value);
+      document.getElementById('q' + index).classList.remove('is-missing');
+      updateProgress();
+    });
 
     document.getElementById('btn-start').addEventListener('click', function () {
       resetQuiz();
@@ -288,10 +343,10 @@
     });
 
     document.getElementById('btn-clear-history').addEventListener('click', function () {
-      if (!global.confirm('Delete every result saved on this device?')) return;
+      if (!global.confirm(t('history.confirm'))) return;
       global.Storage.clear();
       renderHistory();
-      toast('History cleared.');
+      toast(t('history.cleared'));
     });
 
     document.querySelectorAll('[data-back]').forEach(function (button) {
