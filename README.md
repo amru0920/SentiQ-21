@@ -92,10 +92,17 @@ js/
 ├── supabase.js         penyegerakan ke Supabase (pilihan)
 ├── printout.js         binaan laporan untuk dicetak
 └── app.js              aliran skrin dan kawalan borang
-icons/                  ikon aplikasi (dijana daripada logo)
+icons/
+├── icon-*.png          ikon app (logo Flutter)
+├── apple-touch-icon.png
+├── favicon.ico
+├── logo.png            logo SentiQ, dipapar dalam skrin Home
+└── og-image.png        banner untuk kad pratonton pautan
 supabase/schema.sql     jadual + dasar keselamatan
 test/scoring.test.js    ujian pengiraan skor
-tools/make_logo.py      skrip melukis logo + ikon
+tools/
+├── make_icons.py       jana ikon app daripada logo Flutter
+└── make_logo.py        lukis logo SentiQ + banner pautan
 ```
 
 Itu sahaja fail projek ini. Tiada folder lain yang diperlukan.
@@ -129,21 +136,43 @@ Soalan mengikut subskala:
 - **Anxiety** — 2, 4, 7, 9, 15, 19, 20
 - **Stress** — 1, 6, 8, 11, 12, 14, 18
 
-## 8. Logo
+## 8. Kad pratonton pautan
 
-Logo dilukis melalui skrip, bukan fail imej yang diedit tangan. Untuk
-mengubahnya, sunting `tools/make_logo.py`, kemudian jalankan dari akar
-projek:
+Bila pautan di-share di WhatsApp, Telegram, Facebook atau X, ia akan papar
+kad dengan banner `icons/og-image.png`, tajuk dan penerangan. Semua itu
+datang daripada tag `og:` dalam `<head>` fail `index.html`.
+
+**Penting:** URL dalam tag `og:url`, `og:image` dan `twitter:image` mesti
+**URL penuh**, bukan laluan relatif — kalau tidak, WhatsApp abaikan. Sekarang
+ia ditetapkan kepada `https://amru0920.github.io/SentiQ-21/`. Kalau app
+dipindah ke hosting lain (Netlify, Vercel, domain sendiri), tukar tiga URL
+itu dalam `index.html`.
+
+WhatsApp simpan (*cache*) kad tu agak lama. Selepas tukar banner, guna
+<https://developers.facebook.com/tools/debug/> dan tekan *Scrape Again*
+untuk paksa ia baca semula.
+
+## 9. Logo dan ikon
+
+Dua sumber berbeza:
+
+| Fail | Sumber | Dipakai di mana |
+| --- | --- | --- |
+| `icons/icon-*.png`, `apple-touch-icon.png`, `favicon.ico` | `tools/flutter-logo-source.png` | ikon app di skrin utama telefon, tab pelayar |
+| `icons/logo.png`, `icons/og-image.png` | dilukis oleh `tools/make_logo.py` | skrin Home dalam app, banner kad pautan |
+
+Untuk jana semula, dari akar projek:
 
 ```bash
-python tools/make_logo.py   # tulis semula semua fail dalam icons/
+python tools/make_icons.py   # ikon app
+python tools/make_logo.py    # logo SentiQ + banner pautan
 ```
 
-Skrip ini perlukan Python dengan Pillow (`pip install pillow`). Ia hanya
+Kedua-duanya perlukan Python dengan Pillow (`pip install pillow`), dan hanya
 digunakan bila nak ubah logo — aplikasi itu sendiri tidak perlukan Python.
 
 
-## 9. Penafian
+## 10. Penafian
 
 SentiQ 21 ialah **alat saringan**, bukan alat diagnosis. Keputusan tidak
 menggantikan temu bual klinikal bersemuka. Pengguna yang mengalami tekanan

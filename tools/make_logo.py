@@ -1,5 +1,9 @@
-"""Draws the SentiQ 21 mark (cupped hands holding a smiling brain), then
-writes every icon the app needs into icons/.
+"""Draws the SentiQ 21 mark (cupped hands holding a smiling brain) and the
+social preview banner that link previews show.
+
+Writes icons/logo.png (used on the welcome screen) and icons/og-image.png
+(used by the og:image meta tag). The launcher icons come from a different
+source - see tools/make_icons.py.
 
 Rendered at 4x and downsampled so the edges stay smooth without any external
 SVG tooling. Run from the project root:  python tools/make_logo.py
@@ -125,27 +129,66 @@ img = canvas
 
 logo = img.resize((N, N), Image.LANCZOS)
 
-# ------------------------------------------------- PWA icon set
-MINT = (207, 233, 227, 255)
-
-
-def on_mint(size, pad_ratio):
-    """The mark centred on the brand mint square, at the requested size."""
-    bg = Image.new("RGBA", (size, size), MINT)
-    inner = int(size * (1 - pad_ratio * 2))
-    art = logo.resize((inner, inner), Image.LANCZOS)
-    bg.paste(art, ((size - inner) // 2, (size - inner) // 2), art)
-    return bg
-
-
-on_mint(192, 0.08).save("icons/icon-192.png")
-on_mint(512, 0.08).save("icons/icon-512.png")
-on_mint(180, 0.08).save("icons/apple-touch-icon.png")
-# Maskable icons may be cropped by up to ~20% a side, so inset further.
-on_mint(512, 0.20).save("icons/icon-maskable-512.png")
-on_mint(64, 0.06).convert("RGB").save(
-    "icons/favicon.ico", sizes=[(16, 16), (32, 32), (48, 48), (64, 64)]
-)
-# Transparent copy, used inside the page itself.
+# ------------------------------------------------------ outputs
 logo.resize((512, 512), Image.LANCZOS).save("icons/logo.png")
-print("wrote icons/*")
+print("wrote icons/logo.png")
+
+
+# --------------------------------------------- link preview banner
+# 1200x630 is what WhatsApp, Telegram, Facebook and X all read as a wide
+# preview card. Anything smaller and they fall back to a thumbnail.
+from PIL import ImageDraw as _ImageDraw, ImageFont as _ImageFont  # noqa: E402
+
+OG_W, OG_H = 1200, 630
+MINT_BG = (227, 243, 239)
+CARD = (255, 255, 255)
+TITLE_INK = (18, 83, 78)
+LABEL_INK = (91, 143, 136)
+BODY_INK = (60, 107, 101)
+PILL_BG = (207, 233, 227)
+
+
+def font(bold, size):
+    name = "segoeuib.ttf" if bold else "segoeui.ttf"
+    for path in ("C:/Windows/Fonts/" + name, "arialbd.ttf" if bold else "arial.ttf"):
+        try:
+            return _ImageFont.truetype(path, size)
+        except OSError:
+            continue
+    return _ImageFont.load_default()
+
+
+def tracked(draw, xy, text, fnt, fill, tracking):
+    """Draws text with extra letter spacing, which PIL has no option for."""
+    x, y = xy
+    for char in text:
+        draw.text((x, y), char, font=fnt, fill=fill)
+        x += draw.textlength(char, font=fnt) + tracking
+    return x
+
+
+og = Image.new("RGB", (OG_W, OG_H), MINT_BG)
+d2 = _ImageDraw.Draw(og)
+d2.rounded_rectangle([40, 40, OG_W - 40, OG_H - 40], radius=36, fill=CARD)
+
+mark = logo.resize((300, 300), Image.LANCZOS)
+og.paste(mark, (110, (OG_H - 300) // 2), mark)
+
+X = 470
+tracked(d2, (X, 168), "SARINGAN KESIHATAN MENTAL", font(True, 24), LABEL_INK, 3.5)
+d2.text((X - 4, 208), "SentiQ 21", font=font(True, 96), fill=TITLE_INK)
+d2.text((X, 332), "Ujian DASS-21 - 21 soalan, lebih kurang 2 minit.",
+        font=font(False, 30), fill=BODY_INK)
+d2.text((X, 374), "Dapat skor dan tahap keparahan serta-merta.",
+        font=font(False, 30), fill=BODY_INK)
+
+x = X
+for word in ("Depression", "Anxiety", "Stress"):
+    fnt = font(True, 26)
+    w = d2.textlength(word, font=fnt)
+    d2.rounded_rectangle([x, 442, x + w + 44, 498], radius=28, fill=PILL_BG)
+    d2.text((x + 22, 453), word, font=fnt, fill=TITLE_INK)
+    x += w + 60
+
+og.save("icons/og-image.png")
+print("wrote icons/og-image.png")
