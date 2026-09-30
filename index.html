@@ -77,6 +77,53 @@
     </div>
   </section>
 
+  <!-- ------------------------------------------------- your details -->
+  <section class="view" id="view-details">
+    <header class="appbar">
+      <button class="appbar__back" type="button" data-back="home"
+              data-i18n-aria="quiz.back">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11H7.8l5.6-5.6L12 4l-8 8 8 8 1.4-1.4L7.8 13H20z"/></svg>
+      </button>
+      <h1 data-i18n="details.title"></h1>
+    </header>
+
+    <div class="view__scroll">
+      <form class="card" id="details-form" novalidate>
+        <p data-i18n="details.intro"></p>
+
+        <label class="field">
+          <span class="field__label" data-i18n="details.name"></span>
+          <input type="text" id="field-name" name="name" autocomplete="name"
+                 enterkeyhint="next">
+        </label>
+
+        <label class="field">
+          <span class="field__label" data-i18n="details.phone"></span>
+          <input type="tel" id="field-phone" name="phone" autocomplete="tel"
+                 inputmode="tel" enterkeyhint="done">
+        </label>
+
+        <label class="check">
+          <input type="checkbox" id="field-consent">
+          <span data-i18n="details.consent"></span>
+        </label>
+
+        <p class="field__error" id="details-error" hidden></p>
+
+        <p class="privacy-note" data-i18n="details.privacy"></p>
+      </form>
+
+      <div class="view__inline-footer">
+        <button class="btn btn--green" id="btn-details-continue" type="button">
+          <span data-i18n="details.continue"></span>
+        </button>
+        <button class="btn btn--ghost-green" id="btn-details-skip" type="button">
+          <span data-i18n="details.skip"></span>
+        </button>
+      </div>
+    </div>
+  </section>
+
   <!-- ---------------------------------------------- questionnaire -->
   <section class="view" id="view-quiz">
     <header class="appbar">
@@ -156,6 +203,27 @@
       </div>
     </div>
   </section>
+
+  <!-- ------------------------------------- counselling hand-off ---- -->
+  <div class="sheet sheet--center" id="followup-sheet" hidden>
+    <div class="sheet__backdrop" data-close-followup></div>
+    <div class="sheet__panel sheet__panel--center" role="dialog"
+         aria-modal="true" aria-labelledby="followup-title">
+      <h2 id="followup-title" data-i18n="followup.title"></h2>
+      <p class="sheet__sub" data-i18n="followup.body"></p>
+
+      <a class="btn btn--whatsapp" id="followup-chat" href="#" target="_blank"
+         rel="noopener" hidden>
+        <span data-i18n="followup.chat"></span>
+      </a>
+      <p class="sheet__warn" id="followup-nonumber" data-i18n="followup.noNumber"
+         hidden></p>
+
+      <button class="btn btn--pill-light" data-close-followup type="button">
+        <span data-i18n="followup.later"></span>
+      </button>
+    </div>
+  </div>
 
   <!-- ------------------------- first-run language chooser -------- -->
   <!-- Deliberately not translated: nothing here can be, because it is the

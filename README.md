@@ -160,7 +160,115 @@ rawatan, bukan preskripsi, dan tidak menggantikan penilaian profesional. Teks
 setiap tahap ditulis supaya tidak memberi jaminan pemulihan dan tidak
 menghalang pengguna daripada mendapatkan bantuan.
 
-## 6. Cara "Print PDF"
+## 6. Sambungan ke unit kaunseling
+
+### Apa yang berlaku
+
+1. Sebelum soal selidik, pelajar diminta **nama** dan **nombor telefon**,
+   dengan satu kotak persetujuan. Ada juga butang **"Teruskan tanpa butiran
+   saya"** — ujian tetap boleh diambil tanpa nama.
+2. Apabila skor mencetuskan tahap risiko (Severe ke atas, atau soalan 21
+   dijawab 3), satu **popup muncul sendiri** di skrin Keputusan.
+3. Butang hijau membuka WhatsApp kaunselor dengan mesej **sudah tertulis
+   penuh** — nama, nombor, tarikh dan ketiga-tiga skor. Pelajar cuma tekan
+   hantar.
+4. Butang chat itu juga kekal dalam blok talian bantuan, jadi pelajar yang
+   tutup popup masih boleh cari semula.
+
+Contoh mesej yang terhasil:
+
+```
+SentiQ 21 - permohonan sokongan kaunseling
+
+Nama: Ahmad bin Ali
+No. telefon: 019-333 4444
+Tarikh ujian: 30/9/2026, 4:33:45 PM
+
+Keputusan DASS-21:
+- Kemurungan: 42 (Sangat Teruk)
+- Kebimbangan: 42 (Sangat Teruk)
+- Tekanan: 42 (Sangat Teruk)
+
+Saya ingin mendapatkan sokongan kaunseling.
+```
+
+### Tetapan
+
+Isikan nombor WhatsApp kaunselor dalam `config.js`:
+
+```js
+COUNSELLOR_WHATSAPP: '012-345 6789',
+COUNSELLOR_NAME: 'Unit Kaunseling IKM Lumut',
+```
+
+Boleh ditulis dalam apa-apa bentuk — `012-345 6789`, `+60 12 345 6789`,
+`60123456789` — app akan menukarnya kepada bentuk yang `wa.me` terima.
+**Biarkan kosong dan butang itu tersembunyi**, bukannya membuka chat dengan
+nombor yang tiada sesiapa.
+
+Gunakan nombor yang benar-benar dipantau pada waktu pejabat, dan beritahu
+pemilik nombor itu bahawa pelajar akan menghantar mesej ke situ. Ini **bukan
+talian krisis** — talian 24 jam dalam `js/advice.js` yang memainkan peranan
+itu.
+
+### Apa yang app ini TIDAK boleh buat
+
+Dua perkara yang mungkin awak jangkakan, tetapi tidak boleh dilakukan dari
+pelayar:
+
+- **Lampirkan PDF ke WhatsApp secara automatik.** Pautan `wa.me` hanya boleh
+  mengisi **teks** awal; tiada API web untuk melampirkan fail. Sebab itu
+  keputusan dihantar sebagai teks, bukan PDF. Pelajar masih boleh guna butang
+  **Cetak PDF** dan hantar fail itu sendiri.
+- **Menghantar tanpa tindakan pelajar.** Laman statik tidak boleh menghantar
+  mesej bagi pihak orang lain — dan itu memang tidak sepatutnya boleh.
+
+### Jaring keselamatan
+
+Kerana mesej WhatsApp itu **pelajar yang hantar**, seorang pelajar yang tutup
+popup tidak akan sampai kepada kaunselor. Jadi setiap keputusan berisiko
+tinggi juga ditanda `needs_followup = true` dalam Supabase.
+
+Kaunselor boleh semak senarai itu sendiri:
+
+```sql
+select taken_at, full_name, phone,
+       depression, depression_level,
+       anxiety,    anxiety_level,
+       stress,     stress_level
+from public.dass_results
+where needs_followup and consent
+order by taken_at desc;
+```
+
+Tetapkan seorang yang bertanggungjawab menyemak senarai ini setiap hari
+sepanjang tempoh ujian di Lumut. Senarai yang tiada sesiapa semak tidak
+melindungi sesiapa.
+
+### Privasi — ini bahagian paling penting
+
+Menambah nama dan nombor menukar app ini daripada saringan **tanpa nama**
+kepada **rekod kesihatan mental berdaftar**. Di bawah PDPA, itu data peribadi
+sensitif. Tiga perlindungan sudah dipasang:
+
+1. **Persetujuan jelas.** Nama dan nombor hanya dihantar ke Supabase apabila
+   kotak persetujuan ditanda. Tanpa tanda itu, baris tersebut kekal tanpa
+   nama seperti dahulu — ini ada ujiannya dalam suite ujian.
+2. **Kunci `anon` boleh tulis, tidak boleh baca.** Kunci itu terdedah dalam
+   kod di GitHub. `schema.sql` memberi `anon` hak **menulis** nama dan nombor,
+   tetapi **mencabut** hak membacanya semula — walaupun barisnya sendiri. App
+   tidak perlu membacanya; butiran pelajar tersimpan dalam telefonnya. Inilah
+   yang menghalang kunci awam itu daripada bertukar menjadi senarai nama
+   pelajar berserta skor kesihatan mental mereka.
+3. **"Teruskan tanpa butiran saya" memadam betul-betul.** Ia membuang profil
+   yang tersimpan, supaya nama daripada ujian sebelumnya tidak melekat pada
+   keputusan baharu.
+
+Jalankan semula `supabase/schema.sql` selepas kemas kini ini — ia menambah
+lajur baharu dan menetapkan keizinan lajur tersebut. Skrip itu selamat
+dijalankan berulang kali.
+
+## 7. Cara "Print PDF"
 
 Butang **Print PDF** pada skrin Result membuka kotak dialog cetak pelayar.
 Di situ pilih **Save as PDF** (Android dan komputer kedua-duanya ada pilihan
@@ -169,7 +277,7 @@ ini) — sama seperti versi asal aplikasi.
 Reka letak laporan yang dicetak dikawal oleh bahagian `@media print` dalam
 `css/styles.css`.
 
-## 7. Supabase (pilihan)
+## 8. Supabase (pilihan)
 
 Aplikasi berfungsi **sepenuhnya tanpa Supabase** — keputusan disimpan dalam
 peranti pengguna sendiri. Supabase hanya menambah salinan dalam pangkalan
@@ -202,10 +310,10 @@ Nota keselamatan:
 - Jika peranti tiada internet, keputusan disimpan dahulu dan dihantar
   automatik apabila sambungan pulih.
 
-## 8. Struktur fail
+## 9. Struktur fail
 
 ```
-index.html              empat skrin: Home, DASS-21, Result, History
+index.html              lima skrin: Home, Butiran, DASS-21, Result, History
 config.js               tetapan Supabase (kosong = mod luar talian)
 manifest.webmanifest    nama, ikon dan warna aplikasi
 sw.js                   service worker (mod luar talian)
@@ -216,7 +324,7 @@ js/
 ├── storage.js          sejarah dalam peranti (localStorage)
 ├── i18n.js             semua teks dalam 4 bahasa
 ├── supabase.js         penyegerakan ke Supabase (pilihan)
-├── advice.js           cadangan mengikut skor + talian bantuan
+├── advice.js           cadangan mengikut skor, talian bantuan, pautan WhatsApp
 ├── printout.js         binaan laporan untuk dicetak
 ├── install.js          panduan "Add to Home Screen"
 └── app.js              aliran skrin dan kawalan borang
@@ -235,13 +343,13 @@ tools/
 
 Itu sahaja fail projek ini. Tiada folder lain yang diperlukan.
 
-## 9. Ujian
+## 10. Ujian
 
 ```bash
 node test/scoring.test.js
 ```
 
-24 ujian, meliputi:
+30 ujian, meliputi:
 
 - pengiraan skor dan sempadan setiap tahap keparahan
 - satu ujian yang mengeluarkan semula contoh dalam laporan inovasi
@@ -252,8 +360,11 @@ node test/scoring.test.js
   dalam setiap bahasa
 - logik talian bantuan: dipaparkan dari tahap Severe ke atas, dan apabila
   soalan 21 dijawab 3 — tetapi **tidak** pada tahap Moderate
+- penormalan nombor telefon Malaysia kepada bentuk `wa.me`
+- mesej WhatsApp membawa nama, nombor dan ketiga-tiga skor
+- **nama dan nombor hanya dihantar ke Supabase apabila persetujuan diberi**
 
-## 10. Pengiraan DASS-21
+## 11. Pengiraan DASS-21
 
 Setiap subskala ada 7 penyataan, dijawab 0–3. Jumlahnya **didarab dua**
 kerana DASS-21 ialah versi pendek DASS-42. Skor maksimum setiap subskala
@@ -273,7 +384,7 @@ Soalan mengikut subskala:
 - **Anxiety** — 2, 4, 7, 9, 15, 19, 20
 - **Stress** — 1, 6, 8, 11, 12, 14, 18
 
-## 11. Kad pratonton pautan
+## 12. Kad pratonton pautan
 
 Bila pautan di-share di WhatsApp, Telegram, Facebook atau X, ia akan papar
 kad dengan banner `icons/og-image.png`, tajuk dan penerangan. Semua itu
@@ -288,7 +399,7 @@ WhatsApp simpan (*cache*) kad tu agak lama. Selepas tukar banner, guna
 <https://developers.facebook.com/tools/debug/> dan tekan *Scrape Again*
 untuk paksa ia baca semula.
 
-## 12. Logo dan ikon
+## 13. Logo dan ikon
 
 Dua sumber berbeza:
 
@@ -308,7 +419,7 @@ Kedua-duanya perlukan Python dengan Pillow (`pip install pillow`), dan hanya
 digunakan bila nak ubah logo — aplikasi itu sendiri tidak perlukan Python.
 
 
-## 13. Penafian
+## 14. Penafian
 
 SentiQ 21 ialah **alat saringan**, bukan alat diagnosis. Keputusan tidak
 menggantikan temu bual klinikal bersemuka. Pengguna yang mengalami tekanan

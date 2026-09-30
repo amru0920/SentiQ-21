@@ -5,6 +5,7 @@
 
   var HISTORY_KEY = 'sentiq21.history';
   var DEVICE_KEY = 'sentiq21.device';
+  var PROFILE_KEY = 'sentiq21.profile';
   var LIMIT = 100;
 
   function read(key, fallback) {
@@ -67,12 +68,41 @@
     });
   }
 
+  /* Name and phone number, kept on this device so a returning student does
+   * not retype them. Cleared together with the history. */
+  function profile() {
+    var saved = read(PROFILE_KEY, null);
+    if (!saved || typeof saved !== 'object') return { name: '', phone: '', consent: false };
+    return {
+      name: String(saved.name || ''),
+      phone: String(saved.phone || ''),
+      consent: saved.consent === true,
+    };
+  }
+
+  function saveProfile(value) {
+    write(PROFILE_KEY, {
+      name: String(value.name || ''),
+      phone: String(value.phone || ''),
+      consent: value.consent === true,
+    });
+  }
+
+  function clearProfile() {
+    try {
+      localStorage.removeItem(PROFILE_KEY);
+    } catch (error) {
+      /* nothing to clear */
+    }
+  }
+
   function clear() {
     try {
       localStorage.removeItem(HISTORY_KEY);
     } catch (error) {
       /* nothing to clear */
     }
+    clearProfile();
   }
 
   global.Storage = {
@@ -82,5 +112,8 @@
     markSynced: markSynced,
     pending: pending,
     clear: clear,
+    profile: profile,
+    saveProfile: saveProfile,
+    clearProfile: clearProfile,
   };
 })(window);

@@ -29,6 +29,53 @@
 
   var SUBSCALE_ORDER = ['depression', 'anxiety', 'stress'];
   var t = global.I18N.t;
+  var config = global.SENTIQ_CONFIG || {};
+
+  /* ------------------------------------------------- WhatsApp hand-off
+   * wa.me can pre-fill the message text but cannot attach a file - there
+   * is no web API for that - so the result travels as text the counsellor
+   * can read at a glance. The student still has to press send: nothing is
+   * sent on their behalf. */
+
+  /* 012-345 6789, +60 12 345 6789 and 60123456789 all have to end up as
+   * 60123456789, which is the only form wa.me accepts. */
+  function waNumber(raw) {
+    var digits = String(raw || '').replace(/[^0-9]/g, '');
+    if (!digits) return '';
+    if (digits.charAt(0) === '0') return '60' + digits.slice(1);
+    return digits;
+  }
+
+  function counsellorNumber() {
+    return waNumber(config.COUNSELLOR_WHATSAPP);
+  }
+
+  function messageFor(entry, profile) {
+    var lines = [
+      t('wa.heading'),
+      '',
+      t('wa.name') + ': ' + (profile && profile.name ? profile.name : t('wa.notGiven')),
+      t('wa.phone') + ': ' + (profile && profile.phone ? profile.phone : t('wa.notGiven')),
+      t('wa.date') + ': ' + new Date(entry.takenAt).toLocaleString(),
+      '',
+      t('wa.results') + ':',
+    ];
+
+    global.Scoring.score(entry.answers).forEach(function (score) {
+      lines.push('- ' + t('subscale.' + score.key) + ': ' + score.score +
+        ' (' + t('severity.' + score.severityKey) + ')');
+    });
+
+    lines.push('', t('wa.closing'));
+    return lines.join('\n');
+  }
+
+  function chatLink(entry, profile) {
+    var number = counsellorNumber();
+    if (!number) return null;
+    return 'https://wa.me/' + number +
+      '?text=' + encodeURIComponent(messageFor(entry, profile));
+  }
 
   /* The overall next step follows the worst subscale, not an average: a
    * single severe score still needs acting on. */
@@ -127,6 +174,19 @@
     return box;
   }
 
+  function renderChatButton(entry) {
+    var href = chatLink(entry, global.Storage.profile());
+    if (!href) return null;
+
+    var link = document.createElement('a');
+    link.className = 'btn btn--whatsapp';
+    link.href = href;
+    link.target = '_blank';
+    link.rel = 'noopener';
+    link.textContent = t('followup.chat');
+    return link;
+  }
+
   function render(entry, root) {
     var plan = build(entry);
     root.textContent = '';
@@ -135,7 +195,11 @@
     action.classList.add('advice-action--' + plan.bandKey);
     root.appendChild(action);
 
-    if (plan.needsHelp) root.appendChild(renderHelp());
+    if (plan.needsHelp) {
+      root.appendChild(renderHelp());
+      var chat = renderChatButton(entry);
+      if (chat) root.appendChild(chat);
+    }
 
     root.appendChild(node('h2', 'advice-title', t('advice.title')));
     plan.cards.forEach(function (card) {
@@ -149,5 +213,9 @@
     HELPLINES: HELPLINES,
     build: build,
     render: render,
+    waNumber: waNumber,
+    counsellorNumber: counsellorNumber,
+    messageFor: messageFor,
+    chatLink: chatLink,
   };
 })(window);

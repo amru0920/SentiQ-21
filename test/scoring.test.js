@@ -5,15 +5,22 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 
-const sandbox = { window: {}, console };
+const sandbox = {
+  window: {},
+  console,
+  fetch: () => Promise.resolve(),
+  crypto: { randomUUID: () => 'test-device-uuid' },
+};
 sandbox.globalThis = sandbox;
 vm.createContext(sandbox);
 
-for (const file of ['js/i18n.js', 'js/data.js', 'js/scoring.js', 'js/advice.js']) {
+for (const file of ['config.js', 'js/i18n.js', 'js/data.js', 'js/scoring.js',
+                    'js/storage.js', 'js/advice.js', 'js/supabase.js']) {
   vm.runInContext(fs.readFileSync(file, 'utf8'), sandbox, { filename: file });
 }
 
-const { DASS, Scoring, I18N, Advice } = sandbox.window;
+const { DASS, Scoring, I18N, Advice, Sync } = sandbox.window;
+const NOW = '2026-09-30T08:00:00.000Z';
 const CODES = I18N.LANGS.map((entry) => entry.code);
 
 const byKey = (answers) =>
@@ -292,6 +299,76 @@ it('gives every helpline a name, a display number and a dialable number', () => 
     assert.ok(line.number && line.number.trim().length > 0);
     assert.match(line.tel, /^[+0-9]+$/, line.name + ' has an undialable number');
   }
+});
+
+/* ---------------------------------------------- counselling hand-off */
+
+it('normalises every way a Malaysian number gets written', () => {
+  assert.equal(Advice.waNumber('012-345 6789'), '60123456789');
+  assert.equal(Advice.waNumber('+60 12 345 6789'), '60123456789');
+  assert.equal(Advice.waNumber('60123456789'), '60123456789');
+  assert.equal(Advice.waNumber('0193334444'), '60193334444');
+  assert.equal(Advice.waNumber(''), '');
+  assert.equal(Advice.waNumber(undefined), '');
+});
+
+it('offers no chat link while no counsellor number is configured', () => {
+  sandbox.window.SENTIQ_CONFIG.COUNSELLOR_WHATSAPP = '';
+  assert.equal(Advice.chatLink({ answers: new Array(21).fill(3), takenAt: NOW }, null), null);
+});
+
+it('builds a wa.me link carrying the name, number and every score', () => {
+  sandbox.window.SENTIQ_CONFIG.COUNSELLOR_WHATSAPP = '012-345 6789';
+  const entry = { answers: new Array(21).fill(3), takenAt: NOW };
+  const link = Advice.chatLink(entry, { name: 'Ahmad bin Ali', phone: '019-333 4444' });
+
+  assert.ok(link.startsWith('https://wa.me/60123456789?text='), link.slice(0, 40));
+
+  const message = decodeURIComponent(link.split('?text=')[1]);
+  assert.ok(message.includes('Ahmad bin Ali'), 'name missing');
+  assert.ok(message.includes('019-333 4444'), 'phone missing');
+  for (const label of ['depression', 'anxiety', 'stress']) {
+    assert.ok(message.includes(I18N.t('subscale.' + label)), label + ' missing');
+  }
+  assert.ok(message.includes('42'), 'scores missing');
+});
+
+it('says so plainly when the student gave no details', () => {
+  sandbox.window.SENTIQ_CONFIG.COUNSELLOR_WHATSAPP = '012-345 6789';
+  const message = Advice.messageFor({ answers: new Array(21).fill(0), takenAt: NOW }, null);
+  assert.ok(message.includes(I18N.t('wa.notGiven')));
+});
+
+it('sends a name to Supabase only when consent was given', () => {
+  const entry = {
+    id: 'x', deviceId: 'd', takenAt: NOW,
+    answers: new Array(21).fill(3), needsFollowup: true,
+    profile: { name: 'Ahmad bin Ali', phone: '019-333 4444', consent: true },
+  };
+
+  const withConsent = Sync.rowFor(entry);
+  assert.equal(withConsent.full_name, 'Ahmad bin Ali');
+  assert.equal(withConsent.phone, '019-333 4444');
+  assert.equal(withConsent.consent, true);
+  assert.equal(withConsent.needs_followup, true);
+
+  const withheld = Sync.rowFor(
+    Object.assign({}, entry, { profile: { name: 'Ahmad bin Ali', phone: '019-333 4444', consent: false } })
+  );
+  assert.equal(withheld.full_name, null, 'name leaked without consent');
+  assert.equal(withheld.phone, null, 'phone leaked without consent');
+  assert.equal(withheld.consent, false);
+
+  const anonymous = Sync.rowFor(Object.assign({}, entry, { profile: undefined }));
+  assert.equal(anonymous.full_name, null);
+  assert.equal(anonymous.phone, null);
+});
+
+it('flags a row for follow-up on exactly the same rule as the popup', () => {
+  const high = { answers: new Array(21).fill(3) };
+  const low = { answers: new Array(21).fill(0) };
+  assert.equal(Advice.build(high).needsHelp, true);
+  assert.equal(Advice.build(low).needsHelp, false);
 });
 
 console.log('\n' + passed + ' passed');

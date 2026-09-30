@@ -24,6 +24,14 @@
     syncNote: document.getElementById('sync-note'),
     historyList: document.getElementById('history-list'),
     advice: document.getElementById('advice'),
+    detailsForm: document.getElementById('details-form'),
+    fieldName: document.getElementById('field-name'),
+    fieldPhone: document.getElementById('field-phone'),
+    fieldConsent: document.getElementById('field-consent'),
+    detailsError: document.getElementById('details-error'),
+    followupSheet: document.getElementById('followup-sheet'),
+    followupChat: document.getElementById('followup-chat'),
+    followupNoNumber: document.getElementById('followup-nonumber'),
     toast: document.getElementById('toast'),
   };
 
@@ -116,6 +124,77 @@
   function closeLangDialog() {
     el.langDialog.classList.remove('is-open');
     el.langDialog.hidden = true;
+  }
+
+  /* --------------------------------------------------------- details */
+  function openDetails() {
+    var saved = global.Storage.profile();
+    el.fieldName.value = saved.name;
+    el.fieldPhone.value = saved.phone;
+    el.fieldConsent.checked = saved.consent;
+    setDetailsError(null);
+    show('details', 'push');
+  }
+
+  function setDetailsError(key, field) {
+    el.detailsError.hidden = !key;
+    el.detailsError.textContent = key ? t(key) : '';
+    [el.fieldName, el.fieldPhone].forEach(function (input) {
+      input.classList.toggle('is-invalid', input === field);
+    });
+    if (field) field.focus();
+  }
+
+  /* Deliberately loose: enough digits to dial, nothing more. Students write
+   * numbers in every shape, and rejecting a real one helps nobody. */
+  function looksLikePhone(value) {
+    return value.replace(/[^0-9]/g, '').length >= 9;
+  }
+
+  function submitDetails() {
+    var name = el.fieldName.value.trim();
+    var phone = el.fieldPhone.value.trim();
+
+    if (!name) return setDetailsError('details.errName', el.fieldName);
+    if (!looksLikePhone(phone)) return setDetailsError('details.errPhone', el.fieldPhone);
+    if (!el.fieldConsent.checked) return setDetailsError('details.errConsent');
+
+    global.Storage.saveProfile({ name: name, phone: phone, consent: true });
+    startQuiz();
+  }
+
+  /* Taking the test without giving any details has to leave nothing behind,
+   * or a previous run's name would still be attached to this result. */
+  function skipDetails() {
+    global.Storage.clearProfile();
+    startQuiz();
+  }
+
+  function startQuiz() {
+    resetQuiz();
+    show('quiz', 'replace');
+  }
+
+  /* ------------------------------------------------- follow-up sheet */
+  function openFollowup(entry) {
+    var href = global.Advice.chatLink(entry, global.Storage.profile());
+
+    el.followupChat.hidden = !href;
+    el.followupNoNumber.hidden = Boolean(href);
+    if (href) el.followupChat.href = href;
+
+    el.followupSheet.hidden = false;
+    history.pushState(history.state, '', location.hash);
+    requestAnimationFrame(function () {
+      el.followupSheet.classList.add('is-open');
+    });
+  }
+
+  function closeFollowup(fromPopstate) {
+    if (el.followupSheet.hidden) return;
+    el.followupSheet.classList.remove('is-open');
+    el.followupSheet.hidden = true;
+    if (!fromPopstate) history.back();
   }
 
   /* ------------------------------------------------------------ home */
@@ -211,18 +290,30 @@
     }
 
     hideToast();
+    var profile = global.Storage.profile();
     currentEntry = {
       id: global.Storage.deviceId() + '-' + Date.now().toString(36),
       deviceId: global.Storage.deviceId(),
       takenAt: new Date().toISOString(),
       answers: answers.slice(),
       scores: global.Scoring.score(answers),
+      profile: profile,
+      needsFollowup: global.Advice.build({ answers: answers }).needsHelp,
     };
 
     global.Storage.save(Object.assign({}, currentEntry, { synced: false }));
     renderResult(currentEntry);
     show('result', 'replace');
     uploadCurrent();
+
+    /* A beat after the scores land, so they are read before being asked
+     * to do something about them. */
+    if (currentEntry.needsFollowup) {
+      var entry = currentEntry;
+      setTimeout(function () {
+        if (currentEntry === entry && currentView() === 'result') openFollowup(entry);
+      }, 700);
+    }
   }
 
   /* ---------------------------------------------------------- result */
@@ -365,9 +456,37 @@
       updateProgress();
     });
 
-    document.getElementById('btn-start').addEventListener('click', function () {
-      resetQuiz();
-      show('quiz', 'push');
+    document.getElementById('btn-start').addEventListener('click', openDetails);
+    document.getElementById('btn-details-continue')
+      .addEventListener('click', submitDetails);
+    document.getElementById('btn-details-skip')
+      .addEventListener('click', skipDetails);
+
+    el.detailsForm.addEventListener('submit', function (event) {
+      event.preventDefault();
+      submitDetails();
+    });
+
+    document.querySelectorAll('[data-close-followup]').forEach(function (n) {
+      n.addEventListener('click', function () {
+        closeFollowup();
+      });
+    });
+
+    /* Tapping through to WhatsApp has done its job; do not leave the sheet
+     * sitting there when they come back. */
+    el.followupChat.addEventListener('click', function () {
+      setTimeout(function () {
+        closeFollowup();
+      }, 400);
+    });
+
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') closeFollowup();
+    });
+
+    global.addEventListener('popstate', function () {
+      closeFollowup(true);
     });
 
     document.getElementById('btn-submit').addEventListener('click', submit);

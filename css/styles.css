@@ -220,6 +220,84 @@ body {
 
 .btn--pill-light { background: var(--lav-soft); color: var(--purple); }
 
+.btn--whatsapp {
+  background: #25d366;
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* --------------------------------------------------- details form */
+.field {
+  display: block;
+  margin-top: 16px;
+}
+
+.field__label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.field input[type="text"],
+.field input[type="tel"] {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 16px; /* under 16px, iOS Safari zooms the page on focus */
+}
+
+.field input:focus {
+  border-color: var(--purple-btn);
+  outline: 2px solid rgba(155, 137, 198, .3);
+  outline-offset: 0;
+}
+
+.field input.is-invalid { border-color: #c3566c; }
+
+.check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 18px;
+  font-size: 14px;
+  line-height: 1.55;
+  cursor: pointer;
+}
+
+.check input {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin: 2px 0 0;
+  accent-color: var(--purple);
+}
+
+.field__error {
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fdf2f4;
+  color: #8c2f2f;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+.privacy-note {
+  margin: 18px 0 0 !important;
+  padding-top: 14px;
+  border-top: 1px solid #eee;
+  font-size: 12.5px !important;
+  line-height: 1.55 !important;
+  color: var(--ink-soft);
+}
+
 /* ------------------------------------------------------------ quiz */
 .progress { padding: 4px 0 12px; }
 

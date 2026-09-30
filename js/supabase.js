@@ -43,11 +43,20 @@
       byKey[score.key] = score;
     });
 
+    var profile = entry.profile || {};
+    var consented = profile.consent === true;
+
     return {
       id: entry.id,
       device_id: entry.deviceId,
       taken_at: entry.takenAt,
       answers: entry.answers,
+      /* Only ever sent when the person ticked the consent box. Without it
+       * the row stays anonymous, exactly as before. */
+      full_name: consented ? (profile.name || null) : null,
+      phone: consented ? (profile.phone || null) : null,
+      consent: consented,
+      needs_followup: entry.needsFollowup === true,
       depression: byKey.depression.score,
       depression_level: level(byKey.depression),
       anxiety: byKey.anxiety.score,
@@ -103,6 +112,7 @@
 
   global.Sync = {
     isConfigured: isConfigured,
+    rowFor: rowFor,
     push: push,
     syncPending: syncPending,
   };
